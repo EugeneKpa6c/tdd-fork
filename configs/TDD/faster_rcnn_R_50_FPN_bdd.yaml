@@ -1,0 +1,58 @@
+_BASE_: "../Base-RCNN-FPN.yaml"
+MODEL:
+  META_ARCHITECTURE: "Two_head_TwoStagePseudoLabGeneralizedRCNN_REFINE"
+  # WEIGHTS: "/app/pretrain_r50_FPN/bdd/model_0008999.pth"
+  # WEIGHTS: "/app/output/model_0011999.pth"
+  WEIGHTS: "/app/ubteacher/checkpoint/R-50.pkl"
+
+  MASK_ON: False
+  RESNETS:
+    DEPTH: 50
+  PROPOSAL_GENERATOR:
+    NAME: "PseudoLabRPN"
+  RPN:
+    POSITIVE_FRACTION: 0.25
+  ROI_HEADS:
+    NAME: "StandardROIHeadsPseudoLab_object_relation"
+    LOSS: "FocalLoss" # variant: "CrossEntropy", "FocalLoss"
+    NUM_CLASSES : 10
+SOLVER:
+  LR_SCHEDULER_NAME: "WarmupMultiStepLR"
+  # STEPS: (6000, 8000, 12100)
+  # FACTOR_LIST: (1, 1, 1, 1)
+  # MAX_ITER: 12100
+  STEPS: (60000, 80000, 90000, 360000)
+  FACTOR_LIST: (1, 1, 1, 1)
+  MAX_ITER: 100000
+  IMS_PER_BATCH: 2
+  IMG_PER_BATCH_LABEL: 1
+  IMG_PER_BATCH_UNLABEL: 1
+  BASE_LR: 0.001
+  # BASE_LR: 0.01
+  CHECKPOINT_PERIOD: 1500
+  AMP:
+    ENABLED: false
+DATALOADER:
+  SUP_PERCENT: 100.0
+DATASETS:
+  CROSS_DATASET: True
+  TRAIN_UNLABEL: ("bdd100k_train_unlabel",)
+  TEST: ("bdd100k_coco_val",)
+  TRAIN_LABEL: ("bdd100k_coco_train",)
+  # TRAIN: ("bdd100k_coco_train",)
+
+SEMISUPNET:
+  Trainer: "TDD"
+  BBOX_THRESHOLD: 0.7
+  TEACHER_UPDATE_ITER: 1
+  BURN_UP_STEP: 50000
+  EMA_KEEP_RATE: 0.9996
+  UNSUP_LOSS_WEIGHT: 2.0
+  Teacher_Refine: True
+
+TEST:
+  EVAL_PERIOD: 3000
+FFT_ON: True
+OBJECT_RELATION: True
+BOTH_ATTENTION: False
+SHARE: True
